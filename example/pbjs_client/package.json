@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "protobufjs": "^6.8.6"
+    "isomorphic-fetch": "^2.2.1",
+    "protobufjs": "^6.8.6",
+    "typescript": "^2.8.3"
   }
 }
