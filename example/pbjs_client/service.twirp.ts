@@ -24,7 +24,7 @@ export const createTwirpAdapter = (hostname: string): $protobufjs.RPCImpl => {
     return (method: rpc.ServiceMethod<Message<{}>,Message<{}>>, requestData: Uint8Array, callback: $protobufjs.RPCImplCallback) => {
         axios({
             method: 'POST',
-            url: hostname + '/twirp/twitch.twirp.example.Haberdasher/' + getServiceMethodName(method),
+            url: hostname + getServiceMethodName(method),
             headers: {
                 'Content-Type': 'application/protobuf'
             },
