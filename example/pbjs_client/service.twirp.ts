@@ -28,11 +28,13 @@ export const createTwirpAdapter = (hostname: string): $protobufjs.RPCImpl => {
             headers: {
                 'Content-Type': 'application/protobuf'
             },
-            data: requestData,
+            // required to get an arraybuffer of the actual size, not the 8192 buffer pool that protobuf.js uses
+            // see: https://github.com/dcodeIO/protobuf.js/issues/852
+            data: requestData.slice(),
             responseType: 'arraybuffer'
         })
         .then((resp: AxiosResponse<Uint8Array>) => {
-            callback(null, resp.data);
+            callback(null, new Uint8Array(resp.data));
         })
         .catch((err) => {
             callback(err, null);
