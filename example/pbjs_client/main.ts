@@ -1,10 +1,6 @@
-import {twitch} from './service.pb';
-import Haberdasher = twitch.twirp.example.Haberdasher;
-import {createTwirpAdapter} from './service.twirp';
+import {createTwirpHaberdasher} from './service.twirp';
 
-const hostname = 'http://localhost:8080';
-const twirpPrefix = '/twirp/twitch.twirp.example.Haberdasher/';
-const haberdasher = Haberdasher.create(createTwirpAdapter(hostname + twirpPrefix));
+const haberdasher = createTwirpHaberdasher('http://localhost:8080');
 
 haberdasher.makeHat({inches: 10})
     .then((hat) => console.log(hat))

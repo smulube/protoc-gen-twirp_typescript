@@ -1,3 +1,11 @@
+package generator
+
+import (
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+)
+
+const tmpl = `
 import {Message, Method, rpc} from 'protobufjs';
 import * as $protobufjs from 'protobufjs';
 import axios, {AxiosResponse} from 'axios';
@@ -48,6 +56,14 @@ export const createTwirpAdapter = (hostname: string): $protobufjs.RPCImpl => {
     };
 };
 
-export const createTwirpHaberdasher = (hostname: string): twitch.twirp.example.Haberdasher => {
-    return twitch.twirp.example.Haberdasher.create(createTwirpAdapter(hostname + '/twirp/twitch.twirp.example.Haberdasher/'));
+{{range .Services}}
+export const createTwirpHaberdasher = (hostname: string): {{.Package}}.{{.Name}} => {
+    return {{.Package}}.{{.Name}}.create(createTwirpAdapter(hostname + '/twirp/{{.Package}}.{{.Name}}/'));
 };
+{{end}}
+`
+
+func CreatePbjsAdapter(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_File, error) {
+
+	return nil, nil
+}
