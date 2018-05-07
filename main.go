@@ -4,11 +4,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"go.larrymyers.com/protoc-gen-twirp_typescript/generator"
+	"go.larrymyers.com/protoc-gen-twirp_typescript/generator/minimal"
 )
 
 func main() {
@@ -43,7 +43,7 @@ func generate(in *plugin.CodeGeneratorRequest) *plugin.CodeGeneratorResponse {
 			continue
 		}
 
-		cf, err := generator.CreateClientAPI(f)
+		cf, err := minimal.Generate(f)
 		if err != nil {
 			resp.Error = proto.String(err.Error())
 			return resp
@@ -52,20 +52,20 @@ func generate(in *plugin.CodeGeneratorRequest) *plugin.CodeGeneratorResponse {
 		resp.File = append(resp.File, cf)
 	}
 
-	resp.File = append(resp.File, generator.RuntimeLibrary())
+	resp.File = append(resp.File, minimal.RuntimeLibrary())
 
-	params := getParameters(in)
+	params := generator.GetParameters(in)
 
 	if pkgName, ok := params["package_name"]; ok {
-		idx, err := generator.CreatePackageIndex(resp.File)
+		idx, err := minimal.CreatePackageIndex(resp.File)
 		if err != nil {
 			resp.Error = proto.String(err.Error())
 			return resp
 		}
 
 		resp.File = append(resp.File, idx)
-		resp.File = append(resp.File, generator.CreateTSConfig())
-		resp.File = append(resp.File, generator.CreatePackageJSON(pkgName))
+		resp.File = append(resp.File, minimal.CreateTSConfig())
+		resp.File = append(resp.File, minimal.CreatePackageJSON(pkgName))
 	}
 
 	return resp
@@ -80,23 +80,4 @@ func writeResponse(w io.Writer, resp *plugin.CodeGeneratorResponse) {
 	if err != nil {
 
 	}
-}
-
-type Params map[string]string
-
-func getParameters(in *plugin.CodeGeneratorRequest) Params {
-	params := make(Params)
-
-	if in.Parameter == nil {
-		return params
-	}
-
-	pairs := strings.Split(*in.Parameter, ",")
-
-	for _, pair := range pairs {
-		kv := strings.Split(pair, "=")
-		params[kv[0]] = kv[1]
-	}
-
-	return params
 }

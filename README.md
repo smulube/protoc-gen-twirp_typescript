@@ -2,10 +2,10 @@
 
 A protoc plugin for generating a twirp client suitable for browser and node.js projects.
 
-There are two options when generating the client code:
+This plugin supports two different outputs when generating code:
 
-1. Generate code directly into an existing typescript project with a compilation and build process already in place.
-2. Generate a standalone npm package that can be published with the compiled javascript and typings.
+1. A minimal standalone client that supports JSON transport only.
+2. [Protobuf.js](https://github.com/dcodeIO/protobuf.js) adapter for RPC calls to a twirp server. 
 
 ## Setup
 

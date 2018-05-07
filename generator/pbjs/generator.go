@@ -1,6 +1,10 @@
-package generator
+package pbjs
 
 import (
+	"bytes"
+	"text/template"
+
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
@@ -63,7 +67,42 @@ export const createTwirpHaberdasher = (hostname: string): {{.Package}}.{{.Name}}
 {{end}}
 `
 
-func CreatePbjsAdapter(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_File, error) {
+type Service struct {
+	Name    string
+	Package string
+}
 
-	return nil, nil
+type tmplContext struct {
+	Services []Service
+}
+
+func Generate(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_File, error) {
+	ctx := tmplContext{}
+	pkg := d.GetPackage()
+
+	for _, s := range d.Service {
+		service := Service{
+			Name:    s.GetName(),
+			Package: pkg,
+		}
+
+		ctx.Services = append(ctx.Services, service)
+	}
+
+	t, err := template.New("pbjs_client").Parse(tmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	b := bytes.NewBufferString("")
+	err = t.Execute(b, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cf := &plugin.CodeGeneratorResponse_File{}
+	cf.Name = proto.String("service.twirp.ts")
+	cf.Content = proto.String(b.String())
+
+	return cf, nil
 }

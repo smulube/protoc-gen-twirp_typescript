@@ -1,20 +1,34 @@
 package generator
 
 import (
-	"path"
+	"strings"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"go.larrymyers.com/protoc-gen-twirp_typescript/generator/minimal"
 )
 
-func tsModuleFilename(f *descriptor.FileDescriptorProto) string {
-	name := *f.Name
+type Params map[string]string
 
-	if ext := path.Ext(name); ext == ".proto" || ext == ".protodevel" {
-		base := path.Base(name)
-		name = base[:len(base)-len(path.Ext(base))]
+func GetParameters(in *plugin.CodeGeneratorRequest) Params {
+	params := make(Params)
+
+	if in.Parameter == nil {
+		return params
 	}
 
-	name += ".ts"
+	pairs := strings.Split(*in.Parameter, ",")
 
-	return name
+	for _, pair := range pairs {
+		kv := strings.Split(pair, "=")
+		params[kv[0]] = kv[1]
+	}
+
+	return params
+}
+
+type Generator = func(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_File, error)
+
+func NewGenerator(p Params) Generator {
+	return minimal.Generate
 }

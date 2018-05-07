@@ -1,8 +1,9 @@
-package generator
+package minimal
 
 import (
 	"bytes"
 	"fmt"
+	"path"
 	"strings"
 	"text/template"
 
@@ -175,7 +176,7 @@ func (ctx *APIContext) enableUnmarshal(m *Model) {
 	}
 }
 
-func CreateClientAPI(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_File, error) {
+func Generate(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_File, error) {
 	ctx := NewAPIContext()
 	pkg := d.GetPackage()
 
@@ -258,6 +259,19 @@ func CreateClientAPI(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorRe
 	cf.Content = proto.String(b.String())
 
 	return cf, nil
+}
+
+func tsModuleFilename(f *descriptor.FileDescriptorProto) string {
+	name := *f.Name
+
+	if ext := path.Ext(name); ext == ".proto" || ext == ".protodevel" {
+		base := path.Base(name)
+		name = base[:len(base)-len(path.Ext(base))]
+	}
+
+	name += ".ts"
+
+	return name
 }
 
 func newField(f *descriptor.FieldDescriptorProto) ModelField {
