@@ -7,6 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"go.larrymyers.com/protoc-gen-twirp_typescript/generator"
 )
 
 const tmpl = `
@@ -67,21 +68,27 @@ export const createTwirpHaberdasher = (hostname: string): {{.Package}}.{{.Name}}
 {{end}}
 `
 
-type Service struct {
+type service struct {
 	Name    string
 	Package string
 }
 
 type tmplContext struct {
-	Services []Service
+	Services []service
 }
 
-func Generate(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_File, error) {
+func NewGenerator() generator.Generator {
+	return &pbjsGenerator{}
+}
+
+type pbjsGenerator struct{}
+
+func (g *pbjsGenerator) Generate(d *descriptor.FileDescriptorProto) ([]*plugin.CodeGeneratorResponse_File, error) {
 	ctx := tmplContext{}
 	pkg := d.GetPackage()
 
 	for _, s := range d.Service {
-		service := Service{
+		service := service{
 			Name:    s.GetName(),
 			Package: pkg,
 		}
@@ -104,5 +111,5 @@ func Generate(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_
 	cf.Name = proto.String("service.twirp.ts")
 	cf.Content = proto.String(b.String())
 
-	return cf, nil
+	return []*plugin.CodeGeneratorResponse_File{cf}, nil
 }

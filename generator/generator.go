@@ -6,6 +6,7 @@ import (
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"go.larrymyers.com/protoc-gen-twirp_typescript/generator/minimal"
+	"go.larrymyers.com/protoc-gen-twirp_typescript/generator/pbjs"
 )
 
 type Params map[string]string
@@ -27,8 +28,15 @@ func GetParameters(in *plugin.CodeGeneratorRequest) Params {
 	return params
 }
 
-type Generator = func(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_File, error)
+type Generator interface {
+	Generate(d *descriptor.FileDescriptorProto) ([]*plugin.CodeGeneratorResponse_File, error)
+}
 
 func NewGenerator(p Params) Generator {
-	return minimal.Generate
+	lib, ok := p["library"]
+	if ok && lib == "pbjs" {
+		return pbjs.NewGenerator()
+	}
+
+	return minimal.NewGenerator(p)
 }

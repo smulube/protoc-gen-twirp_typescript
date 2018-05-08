@@ -8,7 +8,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"go.larrymyers.com/protoc-gen-twirp_typescript/generator"
-	"go.larrymyers.com/protoc-gen-twirp_typescript/generator/minimal"
 )
 
 func main() {
@@ -36,36 +35,19 @@ func readRequest(r io.Reader) *plugin.CodeGeneratorRequest {
 
 func generate(in *plugin.CodeGeneratorRequest) *plugin.CodeGeneratorResponse {
 	resp := &plugin.CodeGeneratorResponse{}
+	params := generator.GetParameters(in)
+	gen := generator.NewGenerator(params)
 
 	for _, f := range in.GetProtoFile() {
-		// skip google/protobuf/timestamp, we don't do any special serialization for jsonpb.
-		if *f.Name == "google/protobuf/timestamp.proto" {
-			continue
-		}
-
-		cf, err := minimal.Generate(f)
+		files, err := gen.Generate(f)
 		if err != nil {
 			resp.Error = proto.String(err.Error())
 			return resp
 		}
 
-		resp.File = append(resp.File, cf)
-	}
-
-	resp.File = append(resp.File, minimal.RuntimeLibrary())
-
-	params := generator.GetParameters(in)
-
-	if pkgName, ok := params["package_name"]; ok {
-		idx, err := minimal.CreatePackageIndex(resp.File)
-		if err != nil {
-			resp.Error = proto.String(err.Error())
-			return resp
+		for _, cf := range files {
+			resp.File = append(resp.File, cf)
 		}
-
-		resp.File = append(resp.File, idx)
-		resp.File = append(resp.File, minimal.CreateTSConfig())
-		resp.File = append(resp.File, minimal.CreatePackageJSON(pkgName))
 	}
 
 	return resp

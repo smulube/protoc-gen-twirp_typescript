@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"go.larrymyers.com/protoc-gen-twirp_typescript/generator"
 )
 
 const apiTemplate = `
@@ -176,7 +177,22 @@ func (ctx *APIContext) enableUnmarshal(m *Model) {
 	}
 }
 
-func Generate(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_File, error) {
+func NewGenerator(p generator.Params) generator.Generator {
+	return &minimalGenerator{params: p}
+}
+
+type minimalGenerator struct {
+	params generator.Params
+}
+
+func (g *minimalGenerator) Generate(d *descriptor.FileDescriptorProto) ([]*plugin.CodeGeneratorResponse_File, error) {
+	var files []*plugin.CodeGeneratorResponse_File
+
+	// skip WKT Timestamp, we don't do any special serialization for jsonpb.
+	if *d.Name == "google/protobuf/timestamp.proto" {
+		return files, nil
+	}
+
 	ctx := NewAPIContext()
 	pkg := d.GetPackage()
 
@@ -254,11 +270,25 @@ func Generate(d *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorResponse_
 		return nil, err
 	}
 
-	cf := &plugin.CodeGeneratorResponse_File{}
-	cf.Name = proto.String(tsModuleFilename(d))
-	cf.Content = proto.String(b.String())
+	clientAPI := &plugin.CodeGeneratorResponse_File{}
+	clientAPI.Name = proto.String(tsModuleFilename(d))
+	clientAPI.Content = proto.String(b.String())
 
-	return cf, nil
+	files = append(files, clientAPI)
+	files = append(files, RuntimeLibrary())
+
+	if pkgName, ok := g.params["package_name"]; ok {
+		idx, err := CreatePackageIndex(files)
+		if err != nil {
+			return nil, err
+		}
+
+		files = append(files, idx)
+		files = append(files, CreateTSConfig())
+		files = append(files, CreatePackageJSON(pkgName))
+	}
+
+	return files, nil
 }
 
 func tsModuleFilename(f *descriptor.FileDescriptorProto) string {
